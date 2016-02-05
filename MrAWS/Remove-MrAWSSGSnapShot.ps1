@@ -52,22 +52,27 @@ function Remove-MrAWSSGSnapShot {
         [string]$Status = 'completed'
     )
 
-    $volumes = ((Get-SGGateway |
-                 Where-Object GatewayARN -Like "*$GatewayName" |
-                 Get-SGVolume).VolumeARN -replace '^.*/').ToLower()
+    $AWSVersion = (Get-Module -Name AWSPowerShell).Version.Major
 
+    if ($AWSVersion -lt 3) {
+        $gateway = Get-SGGateway | Where-Object GatewayARN -Like "*$GatewayName"
+    }
+    elseif ($AWSVersion -ge 3) {
+        $gateway = Get-SGGateway | Where-Object GatewayName -eq $GatewayName
+    } 
+
+    $volumes = (($gateway | Get-SGVolume).VolumeARN -replace '^.*/').ToLower()
     $cutoff = (Get-Date).AddDays(-$Days)
-    
     $Params = @{}
 
     If ((-not($PSBoundParameters['Confirm'])) -and (-not($PSBoundParameters['WhatIf']))) {
         $Params.force = $true
     }
 
-    foreach ($volumeID in $volumes) {
+    foreach ($volume in $volumes) {
         $filter1 = New-Object Amazon.EC2.Model.Filter
         $filter1.Name = 'volume-id'
-        $filter1.Value.Add($volumeID)
+        $filter1.Value.Add($volume)
 
         $filter2 = New-Object Amazon.EC2.Model.Filter
         $filter2.Name = 'status'

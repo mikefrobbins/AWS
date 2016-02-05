@@ -52,7 +52,17 @@ function Get-MrAWSSGSnapShot {
         [string]$Status = 'completed'
     )
 
-    $gateway = Get-SGGateway | Where-Object GatewayARN -Like "*$GatewayName"
+    $AWSVersion = (Get-Module -Name AWSPowerShell).Version.Major
+
+    if ($AWSVersion -lt 3) {
+        $gateway = Get-SGGateway | Where-Object GatewayARN -Like "*$GatewayName"
+        $Name = $gateway.GatewayARN -replace '^.*/'
+    }
+    elseif ($AWSVersion -ge 3) {
+        $gateway = Get-SGGateway | Where-Object GatewayName -eq $GatewayName
+        $Name = $gateway.GatewayName
+    }   
+    
     $volumes = (($gateway | Get-SGVolume).VolumeARN -replace '^.*/').ToLower()
     $cutoff = (Get-Date).AddDays(-$Days)
 
@@ -72,7 +82,7 @@ function Get-MrAWSSGSnapShot {
         foreach ($snapshot in $snapshots) {
 
             $CustomObject = [PSCustomObject]@{
-                GatewayName = $gateway.GatewayARN -replace '^.*/'
+                GatewayName = $Name
                 VolumeId = $snapshot.VolumeId
                 SnapshotId = $snapshot.SnapshotId
                 StartTime = $snapshot.StartTime
