@@ -1,4 +1,5 @@
-﻿#Requires -Version 3.0 -Modules AWSPowerShell
+﻿#Requires -Version 3.0
+#Add 'Requires -Modules AWSPowerShell' if used without the script module
 function Remove-MrAWSSGSnapShot {
 
 <#
